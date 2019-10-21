@@ -1,11 +1,11 @@
 # django
 from django.test import TestCase
 
-# deps
-import mock
+# first party
+from anon import BaseAnonymizer, lazy_attribute
 
 # local
-from .. import BaseAnonymizer, lazy_attribute
+from .compat import mock
 
 
 class BaseTestCase(TestCase):
@@ -43,7 +43,7 @@ class BaseTestCase(TestCase):
 
         anonymizer = Anon()
         result = anonymizer.get_queryset()
-        self.assertItemsEqual(result, [sample_obj])
+        self.assertEqual(result, [sample_obj])
         m.objects.all.assert_called_once()
 
     def test_patch_object(self):
@@ -67,8 +67,8 @@ class BaseTestCase(TestCase):
         self.assertEqual(obj.last_name, '')
         self.assertEqual(obj.raw_data, {})
 
-    @mock.patch('core.anonymizer.base.bulk_update')
-    @mock.patch('core.anonymizer.base.chunkator_page')
+    @mock.patch('anon.base.bulk_update')
+    @mock.patch('anon.base.chunkator_page')
     def test_run(self, chunkator_page, bulk_update):
         class Anon(BaseAnonymizer):
             class Meta:
@@ -165,14 +165,9 @@ class BaseTestCase(TestCase):
     def test_get_declarations(self):
         # Ensure the order is preserved
         class Anon(BaseAnonymizer):
-            z = 1
-            x = lazy_attribute(lambda o: 3)
-            y = 2
             a = lazy_attribute(lambda o: 4)
             c = lazy_attribute(lambda o: 6)
             b = lazy_attribute(lambda o: 5)
 
         anonymizer = Anon()
-        self.assertEqual(anonymizer.get_declarations().keys(), [
-            'y', 'z', 'x', 'a', 'c', 'b',
-        ])
+        self.assertEqual(list(anonymizer.get_declarations().keys()), ['a', 'c', 'b'])
